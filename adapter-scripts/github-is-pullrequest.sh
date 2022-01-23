@@ -12,7 +12,7 @@ fi
 echo $GITHUB_REF | egrep refs/pull
 if [ $? -ne 0 ]; then
   echo INFO: GitHub workflow not running for pull request | tee -a io-log.txt
-  PULL_NUMBER=false
+  PULL_NUMBER=null
 else
   echo INFO: GitHub workflow running for pull request | tee -a io-log.txt
   PULL_NUMBER=`echo $GITHUB_REF | tr '/' ' ' | awk '{ print $3 }'`
