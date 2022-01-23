@@ -11,8 +11,9 @@ fi
 
 githubChangesFile="github-changes-$$.txt"
 
-echo EXEC: python3 ~/PycharmProjects/synopsys-github-tools/github-get-changed-files.py --output ${githubChangesFile} --debug 9 | tee -a io-log.txt
-python3 ~/PycharmProjects/synopsys-github-tools/github-get-changed-files.py --output ${githubChangesFile} --debug 9 2>&1 | tee -a io-log.txt
+DIRECTORY=`dirname $0`
+echo EXEC: python3 $DIRECTORY/github-get-changed-files.py --output ${githubChangesFile} --debug 9 | tee -a io-log.txt
+python3 $DIRECTORY/github-get-changed-files.py --output ${githubChangesFile} --debug 9 2>&1 | tee -a io-log.txt
 
 githubChanges=""
 for file in `cat ${githubChangesFile}`; do
