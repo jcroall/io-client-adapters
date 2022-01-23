@@ -12,12 +12,12 @@ fi
 echo $GITHUB_REF | egrep refs/pull
 if [ $? -ne 0 ]; then
   echo INFO: GitHub workflow not running for pull request | tee -a io-log.txt
-  exit 0
+  PULL_NUMBER=false
 else
   echo INFO: GitHub workflow running for pull request | tee -a io-log.txt
+  PULL_NUMBER=`echo $GITHUB_REF | tr '/' ' ' | awk '{ print $3 }'`
 fi
 
-PULL_NUMBER=`echo $GITHUB_REF | tr '/' ' ' | awk '{ print $3 }'`
 
 contents=$(jq ".Resources.GitHub.PullRequest = \"${PULL_NUMBER}\"" $1)
 
