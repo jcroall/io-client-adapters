@@ -53,6 +53,24 @@
         }
     },
     {
+        "name": "Coverity - Build Capture",
+        "type": "ConfiguredExecutable",
+        "stage": "build",
+        "config": {
+          "require": [
+            "Resources.Coverity.LicenseFile",
+            "Resources.Coverity.Home",
+            "Resources.GitHub.Changes",
+            "Resources.GitHub.ChangesFile",
+            "Resources.GitHub.PullRequest",
+            "Resources.Coverity.BuildCommand"
+            ],
+            "optional": ["Resources.Coverity.BuildOpts"],
+            "command": ["sh", "./adapter-scripts/coverity-build-capture.sh"],
+            "produce": ["Resources.Coverity.BuildWasRun"]
+        }
+    },
+    {
         "name": "Coverity - Auto Capture Analyze",
         "type": "ConfiguredExecutable",
         "stage": "execution",
@@ -70,10 +88,10 @@
             ],
             "optional": [
               "Resources.Coverity.ProjectDir",
+              "Resources.Coverity.BuildWasRun",
               "Resources.Coverity.AnalysisOpts"
             ],
             "produce": [
-              "Resources.Coverity.Idir",
               "Resources.Coverity.OutputJson"
             ],
             "command": ["sh", "./adapter-scripts/coverity-auto-capture-analyze.sh"]
