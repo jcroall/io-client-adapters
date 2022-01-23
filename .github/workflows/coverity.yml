@@ -1,0 +1,90 @@
+name: Coverity
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore: [ '**.yml' ]
+  pull_request:
+    branches: [ master ]
+    paths-ignore: [ '**.yml' ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Use self-hosted runner with full Coverity kit installed
+    runs-on: [self-hosted]
+
+    env:
+      # The following variables must be configured in your GitHub project or
+      # organization settings:
+      #   COVERITY_URL: URL to Coverity Connect
+      #   COVERITY_USER: Username to authenticate to Coverity Connect
+      #   COVERITY_LICENSE: The text contents of your license.dat that will be
+      #     passed to the Coverity analysis software.
+      COVERITY_URL: ${{ secrets.COVERITY_URL }}
+      COV_USER: ${{ secrets.COVERITY_USER }}
+      COVERITY_PASSPHRASE: ${{ secrets.COVERITY_PASSPHRASE }}
+      COVERITY_LICENSE: ${{ secrets.COVERITY_LICENSE }}
+      # Some Coverity command line utilities are not found in the bin
+      # directory. Configure the COVERITY_HOME here:
+      # Note: currently set to JBC VM
+      COVERITY_HOME: /home/runner/cov-analysis-linux64
+      # The SECURITY_GATE_VIEW must be configured in Coverity Connect
+      # to include the filter criteria for failing a build.
+      SECURITY_GATE_VIEW: OWASP Web Top 10
+      # The COVERITY_CHECKERS specifies what analysis options are passed
+      # to the Coverity analysis software.
+      COVERITY_CHECKERS: --webapp-security
+
+    steps:
+      # First check out the code. Note this is a shallow checkout, for the
+      # version of code being built.
+      - uses: actions/checkout@v2
+
+      - name: Fetch IO Client Adapters
+        run: git clone -q --depth 1 https://github.com/jcroall/io-client-adapters
+
+      - name: Initialize IO
+        run: /home/runner/io --adapters coverity-auto-capture.json
+
+      # XXX Note that Scm.Repository.Name and Project.Branch.Name should in theory
+      # be populated by a built-in IO Client adapter, but not sure how that works
+      # yet. In other words, this syntax will get simpler.
+      - name: Pre-scan Stage
+        run: |
+          /home/runner/io --stage pre-scan \
+              --state io_state.json \
+              Scm.Repository.Name=$GITHUB_REPOSITORY \
+              Project.Branch.Name=$GITHUB_REF_NAMES
+
+      # XXX Note the optional build stage. If a build command is provided, the idea
+      # is that the adapter will automatically prefer build capture over auto
+      # capture (which is the default)
+      #- name: Build Stage
+      #  run: |
+      #    /home/runner/io --stage build \
+      #    --state io_state.json \
+      #    Resources.Coverity.BuildCommand="mvn clean && mvn package" \
+      #    Scm.Repository.Name=$GITHUB_REPOSITORY \
+      #    Project.Branch.Name=$GITHUB_REF_NAME
+
+      - name: Execution Stage
+        run: |
+          /home/runner/io --stage execution \
+              --state io_state.json \
+              Scm.Repository.Name=$GITHUB_REPOSITORY \
+              Project.Branch.Name=$GITHUB_REF_NAME
+
+      - name: Workflow Stage
+        run: |
+          /home/runner/io --stage workflow \
+          --state io_state.json \
+          Scm.Repository.Name=$GITHUB_REPOSITORY \
+          Project.Branch.Name=$GITHUB_REF_NAME \
+          Resources.Coverity.SecurityGateView="$SECURITY_GATE_VIEW"
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: io-log.txt
+          path: ./io-log.txt
