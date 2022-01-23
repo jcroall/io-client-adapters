@@ -1,0 +1,133 @@
+[
+    {
+        "name": "GitHub - Get Coverity License",
+        "type": "ConfiguredExecutable",
+        "stage": "pre-scan",
+        "config": {
+            "command": ["sh", "./adapter-scripts/github-get-coverity-license.sh"],
+            "produce": ["Resources.Coverity.LicenseFile"]
+        }
+    },
+    {
+        "name": "GitHub - Get Coverity Environment",
+        "type": "ConfiguredExecutable",
+        "stage": "pre-scan",
+        "config": {
+            "command": ["sh", "./adapter-scripts/github-get-coverity-environment.sh"],
+            "produce": ["Resources.Coverity.Url", "Resources.Coverity.Username", "Resources.Coverity.Passphrase", "Resources.Coverity.Home"]
+        }
+    },
+    {
+        "name": "GitHub - Is Pull Request",
+        "type": "ConfiguredExecutable",
+        "stage": "pre-scan",
+        "config": {
+            "command": ["sh", "./adapter-scripts/github-is-pullrequest.sh"],
+            "produce": ["Resources.GitHub.PullRequest"]
+        }
+    },
+    {
+        "name": "Coverity - Create Stream",
+        "type": "ConfiguredExecutable",
+        "stage": "pre-scan",
+        "config": {
+            "require": [ 
+              "Scm.Repository.Name",
+              "Project.Branch.Name"
+            ],
+            "command": ["sh", "./adapter-scripts/coverity-create-stream.sh"],
+            "produce": ["Resources.Coverity.StreamName"]
+        }
+    },
+    {
+        "name": "GitHub - Get Changes",
+        "type": "ConfiguredExecutable",
+        "stage": "pre-scan",
+        "config": {
+            "require": [
+              "Scm.Repository.Name",
+              "Project.Branch.Name"
+            ],
+            "command": ["sh", "./adapter-scripts/github-get-changes.sh"],
+            "produce": ["Resources.GitHub.ChangesFile", "Resources.GitHub.Changes"]
+        }
+    },
+    {
+        "name": "Coverity - Auto Capture Analyze",
+        "type": "ConfiguredExecutable",
+        "stage": "execution",
+        "config": {
+            "require": [
+              "Resources.Coverity.LicenseFile",
+              "Resources.Coverity.Url",
+              "Resources.Coverity.Username",
+              "Resources.Coverity.Passphrase",
+              "Resources.Coverity.StreamName",
+              "Resources.Coverity.Home",
+              "Resources.GitHub.PullRequest",
+              "Resources.GitHub.Changes",
+              "Resources.GitHub.ChangesFile"
+            ],
+            "optional": [
+              "Resources.Coverity.ProjectDir",
+              "Resources.Coverity.AnalysisOpts"
+            ],
+            "produce": [
+              "Resources.Coverity.Idir",
+              "Resources.Coverity.OutputJson"
+            ],
+            "command": ["sh", "./adapter-scripts/coverity-auto-capture-analyze.sh"]
+        }
+    },
+    {
+        "name": "Coverity - Export SARIF",
+        "type": "ConfiguredExecutable",
+        "stage": "workflow",
+        "config": {
+            "require": [
+              "Resources.Coverity.Home",
+              "Resources.Coverity.OutputJson"
+            ],
+            "command": ["sh", "./adapter-scripts/coverity-export-sarif.sh"],
+            "produce": ["Resources.Coverity.SarifFile"]
+        }
+    },
+    {
+        "name": "Coverity - Comment on GitHub Pull Request",
+        "type": "ConfiguredExecutable",
+        "stage": "workflow",
+        "config": {
+            "require": [
+              "Resources.Coverity.StreamName",
+              "Resources.Coverity.OutputJson"
+            ],
+            "command": ["sh", "./adapter-scripts/coverity-comment-on-github-pr.sh"]
+        }
+    },
+    {
+        "name": "Coverity - Security Gate",
+        "type": "ConfiguredExecutable",
+        "stage": "workflow",
+        "config": {
+            "require": [
+              "Resources.Coverity.Url",
+              "Resources.Coverity.Username",
+              "Resources.Coverity.Passphrase",
+              "Resources.Coverity.StreamName",
+              "Resources.Coverity.SecurityGateView"
+            ],
+            "command": ["sh", "./adapter-scripts/coverity-security-gate.sh"],
+            "produce": ["Resources.Coverity.PassOrFail"]
+        }
+    },
+    {
+      "name": "Sigma Install Adapter",
+      "type": "SigmaInstallAdapter",
+      "stage": "execution"
+    },
+    {
+      "name": "Sigma Execution Adapter",
+      "type": "SigmaExecutionAdapter",
+      "stage": "execution"
+    }
+]
