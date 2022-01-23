@@ -3,10 +3,8 @@ name: Coverity
 on:
   push:
     branches: [ master ]
-    paths-ignore: [ '**.yml' ]
   pull_request:
     branches: [ master ]
-    paths-ignore: [ '**.yml' ]
 
   workflow_dispatch:
 
